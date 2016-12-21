@@ -1,4 +1,4 @@
-Set-PSDebug -Trace 1
+# Set-PSDebug -Trace 1
 ################################################
 # check Administrator
 ################################################
@@ -12,24 +12,21 @@ if ((-not (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIde
 ################################################
 # Auto Login
 ################################################
-Param(
-    $DefaultUserName = "k",
-    $DefaultPassword = Read-Host "Enter Password",
-    $DefaultDomainName = ""
-)
+$DefaultUserName = "k"
+$DefaultPassword = Read-Host "Enter Password"
+$DefaultDomainName = ""
 $RegLogonKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"
 Set-itemproperty -path $RegLogonKey -name "AutoAdminLogon" -value 1
 Set-itemproperty -path $RegLogonKey -name "DefaultUsername" -value $DefaultUserName
 Set-itemproperty -path $RegLogonKey -name "DefaultPassword" -value $DefaultPassword
-if($DefaultDomainName -ne "")
-{
+if($DefaultDomainName -ne "") {
     Set-itemproperty -path $RegLogonKey -name "DefaultDomainName" -value $DefaultDomainName
 }
 
 ################################################
 # Disable UAC
 ################################################
-New-ItemProperty -Path HKLM:Software\Microsoft\Windows\CurrentVersion\policies\system -Name EnableLUA -PropertyType DWord -Value 0 -Force
+# New-ItemProperty -Path HKLM:Software\Microsoft\Windows\CurrentVersion\policies\system -Name EnableLUA -PropertyType DWord -Value 0 -Force
 
 ################################################
 # Explorer settings
@@ -38,22 +35,27 @@ New-ItemProperty -Path HKLM:Software\Microsoft\Windows\CurrentVersion\policies\s
 Set-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -name Start_NotifyNewApps -value 0
 # Disable HideFileExt
 Set-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt -name UncheckedValue -value 0
+# Disable MinAnimate
+Set-ItemProperty HKCU:\Control Panel\Desktop\WindowMetrics -name MinAnimate -value 0
+# Disable TaskbarAnimations
+Set-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -name TaskbarAnimations -Type dword -value 0
 
 ################################################
-# Rename host
+# Enable Developer Mode
+################################################
+Set-ItemProperty HKCM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock -name AllowDevelopmentWithoutDevLicense -Type dword -value 1
+
+################################################
+# Rename hostname
 ################################################
 (Get-WmiObject Win32_ComputerSystem).Rename("k-win10")
 
 ################################################
 # iSCSI
 ################################################
+Set-Service msiscsi -startuptype "automatic"
+Start-Service msiscsi
 New-IscsiTargetPortal -TargetPortalAddress 192.168.1.250
-
-################################################
-# Windows Features
-################################################
-# bash on Ubuntu
-Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 
 ################################################
 # DvorakJ
@@ -62,7 +64,7 @@ $dest = "C:\Program Files (x86)\DvorakJ"
 if (-not (Test-Path $dest)) {
     $src = "$env:TEMP\DvorakJ"
     Invoke-WebRequest -Uri "http://blechmusik.xii.jp/dvorakj/download" -OutFile "$src.zip"
-    unzip "$src.zip" $dest
+    Expand-Archive "$src.zip" $dest
     # Robocopy "$env:TEMP\DvorakJ" "C:\Program Files (x86)\DvorakJ" /COPY:DT /E
     Remove-Item -Recurse -Force "$src.zip"
 }
@@ -80,17 +82,17 @@ if (-not (Test-Path $dest)) {
     Remove-Item $exe
 
     # MacTypePatch 1.19
-    $zipUri = "http://silightblog.tank.jp/MacTypePatch_1.19.zip"
-    $zipPath = "$env:TEMP\MacTypePatch"
+    $zipUri = "https://www.dropbox.com/s/bdtxsj3oiggvn96/MacTypePatch_1.19.zip?dl=1"
+    $zipPath = "$env:TEMP\MacTypePatch_1.19"
     Invoke-WebRequest -Uri $zipUri -OutFile "$zipPath.zip"
-    unzip "$zipPath.zip" $zipPath
+    Expand-Archive "$zipPath.zip" $env:TEMP
     Copy-Item "$zipPath\win8.1 or later\UserParams.ini" "$dest\UserParams.ini"
     Unblock-File "$zipPath\EasyHK32.dll","$zipPath\EasyHK64.dll"
     Copy-Item "$zipPath\EasyHK32.dll" "C:\Windows\SysWOW64\EasyHK32.dll" -Force
     Copy-Item "$zipPath\EasyHK32.dll" "$dest\EasyHK32.dll" -Force
     Copy-Item "$zipPath\EasyHK64.dll" "C:\Windows\System32\EasyHK64.dll" -Force
     Copy-Item "$zipPath\EasyHK64.dll" "$dest\EasyHK64.dll" -Force
-    Remove-Item "$zipPath","$zipPath.zip"
+    Remove-Item -Recurse -Force "$zipPath","$zipPath.zip"
 }
 
 ################################################
@@ -101,9 +103,9 @@ if (-not (Test-Path $dest)) {
     $zipUri = "http://qttabbar-ja.wdfiles.com/local--files/qttabbar/QTTabBar_1038.zip"
     $zipPath = "$env:TEMP\QTTabBar"
     Invoke-WebRequest -Uri $zipUri -OutFile "$zipPath.zip"
-    unzip "$zipPath.zip" $zipPath
+    Expand-Archive "$zipPath.zip" $zipPath
     Start-Process -Wait -FilePath "$zipPath\QTTabBar.exe" -ArgumentList "/quiet"
-    Remove-Item "$zipPath","$zipPath.zip"
+    Remove-Item -Recurse -Force "$zipPath","$zipPath.zip"
 }
 
 ################################################
@@ -111,7 +113,13 @@ if (-not (Test-Path $dest)) {
 ################################################
 iwr https://chocolatey.org/install.ps1 -UseBasicParsing | iex
 RefreshEnv
-choco install -y googlechrome.dev GoogleJapaneseIme VisualStudioCode ConEmu
+choco install -y googlechrome.dev GoogleJapaneseInput VisualStudioCode ConEmu RapidEE
+
+################################################
+# Windows Features
+################################################
+# bash on Ubuntu
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
 
 ################################################
 # Windows Update
