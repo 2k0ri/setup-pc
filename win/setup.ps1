@@ -32,6 +32,14 @@ if($DefaultDomainName -ne "")
 New-ItemProperty -Path HKLM:Software\Microsoft\Windows\CurrentVersion\policies\system -Name EnableLUA -PropertyType DWord -Value 0 -Force
 
 ################################################
+# Explorer settings
+################################################
+# Disable Start_NotifyNewApps
+Set-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -name Start_NotifyNewApps -value 0
+# Disable HideFileExt
+Set-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt -name UncheckedValue -value 0
+
+################################################
 # Rename host
 ################################################
 (Get-WmiObject Win32_ComputerSystem).Rename("k-win10")
@@ -48,7 +56,7 @@ New-IscsiTargetPortal -TargetPortalAddress 192.168.1.250
 Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 
 ################################################
-# DvorakJ Service
+# DvorakJ
 ################################################
 $dest = "C:\Program Files (x86)\DvorakJ"
 if (-not (Test-Path $dest)) {
@@ -82,6 +90,19 @@ if (-not (Test-Path $dest)) {
     Copy-Item "$zipPath\EasyHK32.dll" "$dest\EasyHK32.dll" -Force
     Copy-Item "$zipPath\EasyHK64.dll" "C:\Windows\System32\EasyHK64.dll" -Force
     Copy-Item "$zipPath\EasyHK64.dll" "$dest\EasyHK64.dll" -Force
+    Remove-Item "$zipPath","$zipPath.zip"
+}
+
+################################################
+# QTTabBar
+################################################
+$dest = "C:\Program Files\QTTabBar"
+if (-not (Test-Path $dest)) {
+    $zipUri = "http://qttabbar-ja.wdfiles.com/local--files/qttabbar/QTTabBar_1038.zip"
+    $zipPath = "$env:TEMP\QTTabBar"
+    Invoke-WebRequest -Uri $zipUri -OutFile "$zipPath.zip"
+    unzip "$zipPath.zip" $zipPath
+    Start-Process -Wait -FilePath "$zipPath\QTTabBar.exe" -ArgumentList "/quiet"
     Remove-Item "$zipPath","$zipPath.zip"
 }
 
