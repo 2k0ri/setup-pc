@@ -26,24 +26,33 @@ if($DefaultDomainName -ne "") {
 ################################################
 # Disable UAC
 ################################################
+New-ItemProperty -Path "HKLM:Software\Microsoft\Windows\CurrentVersion\policies\system" -Name PromptOnSecureDesktop -PropertyType DWord -Value 0 -Force
+New-ItemProperty -Path "HKLM:Software\Microsoft\Windows\CurrentVersion\policies\system" -Name ConsentPromptBehaviorAdmin -PropertyType DWord -Value 0 -Force
 # New-ItemProperty -Path HKLM:Software\Microsoft\Windows\CurrentVersion\policies\system -Name EnableLUA -PropertyType DWord -Value 0 -Force
 
 ################################################
 # Explorer settings
 ################################################
 # Disable Start_NotifyNewApps
-Set-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -name Start_NotifyNewApps -value 0
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name Start_NotifyNewApps -Value 0
 # Disable HideFileExt
-Set-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt -name UncheckedValue -value 0
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt" -Name UncheckedValue -Value 0
 # Disable MinAnimate
-Set-ItemProperty HKCU:\Control Panel\Desktop\WindowMetrics -name MinAnimate -value 0
+Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name MinAnimate -Value 0
 # Disable TaskbarAnimations
-Set-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -name TaskbarAnimations -Type dword -value 0
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name TaskbarAnimations -Type DWord -Value 0
+# Set UserPreferencesMask
+Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name UserPreferencesMask -Value ([byte[]]"94 32 03 80 12 00 00 00".Split(' ') | % {"0x$_"})
+
+################################################
+# caps2ctrl
+################################################
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Keyboard Layout" -Name "Scancode Map" -Type DWord -Value ([byte[]]"00,00,00,00,00,00,00,00,02,00,00,00,1d,00,3a,00,00,00,00,00".Split(',') | % {"0x$_"}) -Force
 
 ################################################
 # Enable Developer Mode
 ################################################
-Set-ItemProperty HKCM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock -name AllowDevelopmentWithoutDevLicense -Type dword -value 1
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name AllowDevelopmentWithoutDevLicense -Type DWord -Value 1 -Force
 
 ################################################
 # Rename hostname
@@ -65,10 +74,9 @@ if (-not (Test-Path $dest)) {
     $src = "$env:TEMP\DvorakJ"
     Invoke-WebRequest -Uri "http://blechmusik.xii.jp/dvorakj/download" -OutFile "$src.zip"
     Expand-Archive "$src.zip" $dest
-    # Robocopy "$env:TEMP\DvorakJ" "C:\Program Files (x86)\DvorakJ" /COPY:DT /E
     Remove-Item -Recurse -Force "$src.zip"
 }
-Register-ScheduledTask -TaskName DvorakJ -Trigger (New-ScheduledTaskTrigger -AtLogOn) -RunLevel Highest -Action (New-ScheduledTaskAction -Execute "C:\Program Files (x86)\DvorakJ\DvorakJ.exe") -Settings (New-ScheduledTaskSettingsSet -DisallowHardTerminate -AllowStartIfOnBatteries -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Minutes 3))
+Register-ScheduledTask -TaskName DvorakJ -Trigger (New-ScheduledTaskTrigger -AtLogOn) -RunLevel Highest -Action (New-ScheduledTaskAction -Execute "C:\Program Files (x86)\DvorakJ\DvorakJ.exe") -Settings (New-ScheduledTaskSettingsSet -DisallowHardTerminate -AllowStartIfOnBatteries -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit 0)
 
 ################################################
 # MacType
