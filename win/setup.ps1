@@ -47,7 +47,7 @@ Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name UserPreferencesMask -
 ################################################
 # caps2ctrl
 ################################################
-New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Keyboard Layout" -Name "Scancode Map" -Type DWord -Value ([byte[]]"00,00,00,00,00,00,00,00,02,00,00,00,1d,00,3a,00,00,00,00,00".Split(',') | % {"0x$_"}) -Force
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Keyboard Layout" -Name "Scancode Map" -Type Binary -Value ([byte[]](0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x1d,0x00,0x3a,0x00,0x00,0x00,0x00,0x00)) -Force
 
 ################################################
 # Enable Developer Mode
@@ -60,7 +60,7 @@ New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModel
 (Get-WmiObject Win32_ComputerSystem).Rename("k-win10")
 
 ################################################
-# iSCSI
+# iSCSI Initiator
 ################################################
 Set-Service msiscsi -startuptype "automatic"
 Start-Service msiscsi
@@ -72,7 +72,7 @@ New-IscsiTargetPortal -TargetPortalAddress 192.168.1.250
 $dest = "C:\Program Files (x86)\DvorakJ"
 if (-not (Test-Path $dest)) {
     $src = "$env:TEMP\DvorakJ"
-    Invoke-WebRequest -Uri "http://blechmusik.xii.jp/dvorakj/download" -OutFile "$src.zip"
+    Invoke-WebRequest -Uri "http://blechmusik.xii.jp/resources/app/DvorakJ/archive/2014/06/dj_2014-06-07.zip" -OutFile "$src.zip"
     Expand-Archive "$src.zip" $dest
     Remove-Item -Recurse -Force "$src.zip"
 }
@@ -86,7 +86,7 @@ if (-not (Test-Path $dest)) {
     # MacType 1.2016.904.0
     $exe = "$env:TEMP\MacType.exe"
     Invoke-WebRequest -Uri "https://github.com/snowie2000/mactype/releases/download/v1.2016.904.0/MacTypeInstaller_2016_0904_0.exe" -OutFile $exe
-    Start-Process -Wait -FilePath $exe -ArgumentList "/quiet"
+    Start-Process -Wait -FilePath $exe -ArgumentList "/quiet /qn /qb"
     Remove-Item $exe
 
     # MacTypePatch 1.19
@@ -112,8 +112,20 @@ if (-not (Test-Path $dest)) {
     $zipPath = "$env:TEMP\QTTabBar"
     Invoke-WebRequest -Uri $zipUri -OutFile "$zipPath.zip"
     Expand-Archive "$zipPath.zip" $zipPath
-    Start-Process -Wait -FilePath "$zipPath\QTTabBar.exe" -ArgumentList "/quiet"
+    Start-Process -Wait -FilePath "$zipPath\QTTabBar.exe" -ArgumentList "/i /q"
     Remove-Item -Recurse -Force "$zipPath","$zipPath.zip"
+}
+
+################################################
+# GekiOreRegEd
+################################################
+$dest = "C:\Program Files (x86)\GekiOreRegEd"
+if (-not (Test-Path $dest)) {
+    $exe = "$env:TEMP\GekiOreKaiInst.exe"
+    Invoke-WebRequest -Uri "http://web.archive.org/web/20110712142724/http://textexpage.s154.xrea.com/software/gekiorekai/GekiOreKaiInst.exe" -OutFile $exe
+    Start-Process -Wait -FilePath $exe -ArgumentList "/silent /SP-"
+    Remove-Item $exe
+    taskkill.exe /F /IM GekiOreRegEdit.exe
 }
 
 ################################################
@@ -121,13 +133,15 @@ if (-not (Test-Path $dest)) {
 ################################################
 iwr https://chocolatey.org/install.ps1 -UseBasicParsing | iex
 RefreshEnv
-choco install -y googlechrome.dev GoogleJapaneseInput VisualStudioCode ConEmu RapidEE
+choco install -y GoogleJapaneseInput VisualStudioCode ConEmu RapidEE sandboxie
 
 ################################################
 # Windows Features
 ################################################
 # bash on Ubuntu
-Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
+if((Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux).State -ne "Enabled") {
+    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
+}
 
 ################################################
 # Windows Update
