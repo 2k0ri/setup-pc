@@ -85,35 +85,9 @@ $dest = "C:\Program Files\MacType"
 if (-not (Test-Path $dest)) {
     # MacType 1.2016.904.0
     $exe = "$env:TEMP\MacType.exe"
-    Invoke-WebRequest -Uri "https://github.com/snowie2000/mactype/releases/download/v1.2016.904.0/MacTypeInstaller_2016_0904_0.exe" -OutFile $exe
+    Invoke-WebRequest -Uri "http://www.mactype.net/station/Release/MacTypeInstaller_2017_0628_0.exe" -OutFile $exe
     Start-Process -Wait -FilePath $exe -ArgumentList "/quiet /qn /qb"
     Remove-Item $exe
-
-    # MacTypePatch 1.19
-    $zipUri = "https://www.dropbox.com/s/bdtxsj3oiggvn96/MacTypePatch_1.19.zip?dl=1"
-    $zipPath = "$env:TEMP\MacTypePatch_1.19"
-    Invoke-WebRequest -Uri $zipUri -OutFile "$zipPath.zip"
-    Expand-Archive "$zipPath.zip" $env:TEMP
-    Copy-Item "$zipPath\win8.1 or later\UserParams.ini" "$dest\UserParams.ini"
-    Unblock-File "$zipPath\EasyHK32.dll","$zipPath\EasyHK64.dll"
-    Copy-Item "$zipPath\EasyHK32.dll" "C:\Windows\SysWOW64\EasyHK32.dll" -Force
-    Copy-Item "$zipPath\EasyHK32.dll" "$dest\EasyHK32.dll" -Force
-    Copy-Item "$zipPath\EasyHK64.dll" "C:\Windows\System32\EasyHK64.dll" -Force
-    Copy-Item "$zipPath\EasyHK64.dll" "$dest\EasyHK64.dll" -Force
-    Remove-Item -Recurse -Force "$zipPath","$zipPath.zip"
-}
-
-################################################
-# QTTabBar
-################################################
-$dest = "C:\Program Files\QTTabBar"
-if (-not (Test-Path $dest)) {
-    $zipUri = "http://qttabbar-ja.wdfiles.com/local--files/qttabbar/QTTabBar_1038.zip"
-    $zipPath = "$env:TEMP\QTTabBar"
-    Invoke-WebRequest -Uri $zipUri -OutFile "$zipPath.zip"
-    Expand-Archive "$zipPath.zip" $zipPath
-    Start-Process -Wait -FilePath "$zipPath\QTTabBar.exe" -ArgumentList "/i /q"
-    Remove-Item -Recurse -Force "$zipPath","$zipPath.zip"
 }
 
 ################################################
@@ -133,7 +107,7 @@ if (-not (Test-Path $dest)) {
 ################################################
 iwr https://chocolatey.org/install.ps1 -UseBasicParsing | iex
 RefreshEnv
-choco install -y GoogleJapaneseInput VisualStudioCode ConEmu RapidEE sandboxie
+choco install -y googlechrome GoogleJapaneseInput qttabbar VisualStudioCode ConEmu RapidEE sandboxie registryexplorer
 
 ################################################
 # Windows Features
